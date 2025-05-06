@@ -1,29 +1,76 @@
 const express = require('express');
-
+const { adminAuth } = require('./middlewares/auth');
+const connectDB = require('./config/database');
 const app = express();
+const User = require('./models/user');
 
-// request handler
+app.use(express.json())
+app.post("/signup", async (req, res) => {
+    console.log(req.body);
+    // const user = new User({
+    //     firstName: 'Akash',
+    //     lastName: 'Tiwari',
+    //     emailId: 'abc@abc.com',
+    //     password: 'abc123',
+    //     age: 33,
+    //     gender:'male'
+    // });
+    const user = new User(req.body);
+    // creating a new instance of the  user model
+    try {
+        await user.save();
+        res.send("User added successfully");
+
+    } catch (error) {
+        res.status(400).send("Error saving the user")
+    }
+});
 
 
-app.use('/hello/2', (req, res) =>{
-    res.send("22 Hello hello hello!!!")
-});
-app.use('/hello', (req, res) =>{
-    res.send("Hello hello hello!!!")
-});
-app.use('/test',(req, res) =>{
-    res.send("Hello test form the server !!!")
-});
-app.get('/user',(req, res) =>{
-    res.send({firstName:"akash", lastName: "tiwari"})
-});
-app.post('/user',(req, res) =>{
-    console.log("save data to the database")
-    res.send({firstName:"akash", lastName: "tiwari"} + " added")
-});
-app.use('/', (req, res) =>{
-    res.send("Namaskar!!!")
-});
-app.listen(3000, ()=>{
-    console.log("server is successfully listening on 3000")
-});
+// get user by email
+app.get("/user", async (req, res) => {
+    const userEmail = req.body.emailId;
+    console.log(userEmail)
+
+    try {
+        const users = await User.findOne({ emailId: userEmail })
+        if (users.length === 0) {
+            res.status(404).send("No user found with the searched email id");
+        } else {
+            res.send(users);
+
+        }
+
+
+    } catch (error) {
+        res.status(400).send("Something went wrong");
+    }
+})
+
+// Feed API  -> Get / Feed - get all the users from the database
+
+app.get("/feed", async (req, res) => {
+    try {
+        const users = await User.find({});
+        if (users.length === 0) {
+            res.status(404).send("No user found with the searched email id");
+        } else {
+            res.send(users);
+
+        }
+    } catch (error) {
+        res.status(400).send("Something went wrong");
+
+    }
+})
+
+connectDB().then(() => {
+    console.log("database connection done successfully");
+    app.listen(3000, () => {
+        console.log("server is successfully listening on 3000")
+    });
+}).catch((err) => {
+    console.error("Database cannotbe connected");
+})
+
+
